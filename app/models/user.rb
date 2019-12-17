@@ -79,6 +79,8 @@ class User < ApplicationRecord
   has_many :announcements, inverse_of: :author, dependent: :destroy
   has_many :post_reactions, class_name: 'PostReaction', foreign_key: :user_id, inverse_of: :user, dependent: :destroy
   has_one :forum_view, class_name: 'UserForumView', dependent: :destroy, autosave: true
+  has_many :user_seamails, inverse_of: :user, dependent: :destroy
+  has_many :seamails, through: :user_seamails
 
   before_create :build_forum_view
   after_save :update_cache_for_user

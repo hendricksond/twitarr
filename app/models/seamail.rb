@@ -1,20 +1,29 @@
-class Seamail
-  include Mongoid::Document
-  include Mongoid::Timestamps
-  include Mongoid::Paranoia
+# == Schema Information
+#
+# Table name: seamails
+#
+#  id          :bigint           not null, primary key
+#  last_update :datetime         not null
+#  subject     :string           not null
+#  created_at  :datetime         not null
+#  updated_at  :datetime         not null
+#
+# Indexes
+#
+#  index_seamails_subject  (to_tsvector('english'::regconfig, (subject)::text)) USING gin
+#
+
+class Seamail < ApplicationRecord
   include Searchable
 
-  field :sj, as: :subject, type: String
-  field :us, as: :usernames, type: Array
-  field :up, as: :last_update, type: Time
-  embeds_many :messages, class_name: 'SeamailMessage', store_as: :sm, order: :timestamp.desc, validate: false
+  has_many :messages, -> { order(:id) }, class_name: 'SeamailMessage', inverse_of: :seamail
+  has_many :user_seamails, inverse_of: :seamail, dependent: :destroy
+  has_many :users, through: :user_seamails
 
   validates :subject, presence: true, length: { maximum: 200 }
   validate :validate_users
   validate :validate_messages
 
-  index usernames: 1
-  index 'sm.rd': 1
   index(subject: 'text', 'sm.tx': 'text')
 
   def validate_users
