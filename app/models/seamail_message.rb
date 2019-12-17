@@ -25,11 +25,6 @@
 #
 
 class SeamailMessage < ApplicationRecord
-  # field :au, as: :author, type: String
-  # field :oa, as: :original_author, type: String, default: -> { author }
-  # field :tx, as: :text, type: String
-  # field :ts, as: :timestamp, type: Time
-  # field :rd, as: :read_users, type: Array, default: []
   belongs_to :seamail, inverse_of: :messages, dependent: :destroy
 
   validates :author, presence: true

@@ -69,7 +69,6 @@ class User < ApplicationRecord
   RESET_PASSWORD = 'seamonkey'.freeze
 
   # TODO: Create these as separate tables
-  # field :lf, as: :forum_view_timestamps, type: Hash, default: {}
   # field :us, as: :starred_users, type: Array, default: []
   # field :pc, as: :personal_comments, type: Hash, default: {}
   # field :ea, as: :acknowledged_event_alerts, type: Array, default: []
