@@ -25,14 +25,11 @@ class Seamail < ApplicationRecord
   validate :validate_messages
 
   def validate_users
-    errors[:base] << 'Must send seamail to another user of Twit-arr' unless usernames.count > 1
-    usernames.each do |username|
-      errors[:base] << "#{username} is not a valid username" unless User.exist? username
-    end
+    errors[:base] << 'Must send seamail to another user of Twit-arr' unless user_seamails.length > 1
   end
 
   def validate_messages
-    errors[:base] << 'Must include a message' if messages.empty?
+    errors[:base] << 'Must include a message' if seamail_messages.empty?
     seamail_messages.each do |message|
       message.errors.full_messages.each { |x| errors[:base] << x } unless message.valid?
     end
@@ -58,6 +55,14 @@ class Seamail < ApplicationRecord
     user_seamails.where(user_id: User.get(username).id).update(last_viewed: DateTime.now)
   end
 
+  def unread_for_user?(user_id)
+    user_seamails.includes(:seamail).references(:seamails).where('user_seamails.user_id = ? AND (user_seamails.last_viewed is null OR seamails.last_update > user_seamails.last_viewed)', user_id).any?
+  end
+
+  def last_viewed(user_id)
+    user_seamails.find_by(user_id: user_id).last_viewed
+  end
+
   def self.create_new_seamail(author, to_users, subject, first_message_text, original_author)
     right_now = Time.now
     to_users ||= []
@@ -68,6 +73,13 @@ class Seamail < ApplicationRecord
     seamail.seamail_messages << SeamailMessage.new(author: User.get(author).id, text: first_message_text, original_author: User.get(original_author).id)
 
     recipients = User.where(username: to_users)
+
+    if recipients.count < to_users.count
+      to_users.each do |username|
+        errors[:base] << "#{username} is not a valid username" unless User.exist? username
+      end
+    end
+
     recipients.each do |recipient|
       user_seamail = UserSeamail.new(user_id: recipient.id)
       user_seamail.last_viewed = right_now if recipient.username == author

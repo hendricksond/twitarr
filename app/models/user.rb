@@ -214,39 +214,16 @@ class User < ApplicationRecord
     0
   end
 
-  def seamail_threads(_params = {})
-    # thread_query = Hash.new
-    # thread_query['us'] = username
-    # thread_query['up'] = { '$gt': params[:after] } if params.key?(:after)
-    #
-    # post_query = Hash.new
-    # post_query['sm.rd'] = { '$ne': username } if params.key?(:unread)
-    # post_query['sm.ts'] = { '$gt': params[:after] } if params.key?(:after)
-    #
-    # aggregation = Array.new
-    # aggregation.push('$match' => thread_query)
-    # aggregation.push('$unwind' => '$sm')
-    #
-    # aggregation.push('$match' => post_query) unless post_query.empty?
-    #
-    # aggregation.push('$sort' => { 'sm.ts' => -1 })
-    # aggregation.push(
-    #  '$group' => {
-    #    '_id': '$_id',
-    #    'deleted_at': { '$first': '$deleted_at' },
-    #    'us': { '$first': '$us' },
-    #    'sj': { '$first': '$sj' },
-    #    'up': { '$first': '$up' },
-    #    'updated_at': { '$first': '$updated_at' },
-    #    'created_at': { '$first': '$created_at' },
-    #    'sm': { '$push': '$sm' }
-    #  }
-    # )
-    #
-    # result = Seamail.collection.aggregate(aggregation).map { |x| Seamail.new(x) { |o| o.new_record = false } }
-    #
-    # result.sort_by(&:last_message).reverse
-    []
+  def seamail_threads(params = {})
+    query = seamails
+    query = query.where('seamails.last_update > ?', params[:after]) if params.key?(:after)
+
+    if params.key?(:unread)
+      query = query.includes(:seamail_messages).where('user_seamails.last_viewed is null OR seamail_messages.created_at > user_seamails.last_viewed').references('seamail_messages')
+      query = query.where('seamail_messages.created_at > ?', params[:after]) if params.key?(:after)
+    end
+
+    query.order(last_update: :desc)
   end
 
   def seamail_unread_count
