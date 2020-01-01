@@ -73,14 +73,15 @@ class User < ApplicationRecord
   # field :pc, as: :personal_comments, type: Hash, default: {}
   # field :ea, as: :acknowledged_event_alerts, type: Array, default: []
 
-  has_many :stream_posts, inverse_of: :author, dependent: :destroy
-  has_many :forum_posts, inverse_of: :author, dependent: :destroy
-  has_many :announcements, inverse_of: :author, dependent: :destroy
-  has_many :post_reactions, class_name: 'PostReaction', foreign_key: :user_id, inverse_of: :user, dependent: :destroy
-  has_one :forum_view, class_name: 'UserForumView', dependent: :destroy, autosave: true
+  has_many :stream_posts, inverse_of: :user, foreign_key: :author, dependent: :destroy
+  has_many :forum_posts, inverse_of: :user, foreign_key: :author, dependent: :destroy
+  has_many :announcements, inverse_of: :user, foreign_key: :author, dependent: :destroy
+  has_many :post_reactions, inverse_of: :user, foreign_key: :user_id, dependent: :destroy, class_name: 'PostReaction'
+  has_one :forum_view, inverse_of: :user, foreign_key: :user_id, dependent: :destroy, class_name: 'UserForumView', autosave: true
   has_many :user_seamails, inverse_of: :user, dependent: :destroy
   has_many :seamails, through: :user_seamails
-  has_many :seamail_messages, inverse_of: :user, dependent: :destroy
+  has_many :seamail_messages, through: :seamails
+  has_many :seamail_messages_authored, inverse_of: :user, foreign_key: :author, dependent: :destroy, class_name: 'SeamailMessage'
 
   before_create :build_forum_view
   after_save :update_cache_for_user
@@ -213,7 +214,7 @@ class User < ApplicationRecord
     0
   end
 
-  def seamails(_params = {})
+  def seamail_threads(_params = {})
     # thread_query = Hash.new
     # thread_query['us'] = username
     # thread_query['up'] = { '$gt': params[:after] } if params.key?(:after)
@@ -249,31 +250,15 @@ class User < ApplicationRecord
   end
 
   def seamail_unread_count
-    # Seamail.collection.aggregate([
-    #   {
-    #     "$match" => { "us" => username }
-    #   },
-    #   {
-    #     "$unwind" => "$sm"
-    #   },
-    #   {
-    #     "$match" => { "sm.rd" => {"$ne" => username } }
-    #   },
-    #   {
-    #     "$group" => {
-    #       "_id" => "$_id"
-    #     }
-    #   }
-    # ]).count
-    0
+    seamail_messages.where('seamail_messages.created_at > user_seamails.last_viewed').count
   end
 
   def seamail_count
-    Seamail.where(usernames: username).length
+    seamail_messages.count
   end
 
   def number_of_tweets
-    StreamPost.where(author: username).count
+    stream_posts.count
   end
 
   def number_of_mentions

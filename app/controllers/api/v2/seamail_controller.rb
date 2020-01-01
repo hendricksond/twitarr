@@ -41,7 +41,7 @@ module Api
           extra_query[:after] = val if val
         end
 
-        mails = @as_user.seamails extra_query
+        mails = @as_user.seamail_threads extra_query
 
         if @include_messages
           output = 'seamail_threads'

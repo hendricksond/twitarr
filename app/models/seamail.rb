@@ -16,7 +16,7 @@
 class Seamail < ApplicationRecord
   include Searchable
 
-  has_many :messages, -> { order(:id) }, class_name: 'SeamailMessage', inverse_of: :seamail
+  has_many :seamail_messages, -> { order(:id) }, class_name: 'SeamailMessage', inverse_of: :seamail
   has_many :user_seamails, inverse_of: :seamail, dependent: :destroy
   has_many :users, through: :user_seamails
 
@@ -33,7 +33,7 @@ class Seamail < ApplicationRecord
 
   def validate_messages
     errors[:base] << 'Must include a message' if messages.empty?
-    messages.each do |message|
+    seamail_messages.each do |message|
       message.errors.full_messages.each { |x| errors[:base] << x } unless message.valid?
     end
   end
@@ -51,7 +51,7 @@ class Seamail < ApplicationRecord
   end
 
   def seamail_count
-    messages.count
+    seamail_messages.count
   end
 
   def mark_as_read(username)
@@ -65,7 +65,7 @@ class Seamail < ApplicationRecord
     to_users << author unless to_users.include? author
 
     seamail = Seamail.new(subject: subject, last_update: right_now)
-    seamail.messages << SeamailMessage.new(author: User.get(author).id, text: first_message_text, original_author: User.get(original_author).id)
+    seamail.seamail_messages << SeamailMessage.new(author: User.get(author).id, text: first_message_text, original_author: User.get(original_author).id)
 
     recipients = User.where(username: to_users)
     recipients.each do |recipient|
@@ -82,7 +82,7 @@ class Seamail < ApplicationRecord
     right_now = Time.now
     self.last_update = right_now
     author_id = User.get(author).id
-    messages << SeamailMessage.new(author: author_id, text: text, original_author: User.get(original_author).id)
+    seamail_messages << SeamailMessage.new(author: author_id, text: text, original_author: User.get(original_author).id)
     user_seamails.where(user_id: author_id).update(last_viewed: right_now)
     save
   end
