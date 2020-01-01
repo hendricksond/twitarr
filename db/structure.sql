@@ -532,7 +532,8 @@ ALTER SEQUENCE public.user_forum_views_id_seq OWNED BY public.user_forum_views.i
 CREATE TABLE public.user_seamails (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
-    seamail_id bigint NOT NULL
+    seamail_id bigint NOT NULL,
+    last_viewed timestamp without time zone
 );
 
 

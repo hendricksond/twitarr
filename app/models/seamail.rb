@@ -47,16 +47,15 @@ class Seamail < ApplicationRecord
   end
 
   def last_message
-    messages.first.timestamp
+    last_update
   end
 
   def seamail_count
-    messages.size
+    messages.count
   end
 
   def mark_as_read(username)
-    messages.each { |message| message.read_users.push(username) unless message.read_users.include?(username) }
-    save
+    user_seamails.where(user_id: User.get(username).id).update(last_viewed: DateTime.now)
   end
 
   def self.create_new_seamail(author, to_users, subject, first_message_text, original_author)
@@ -64,8 +63,17 @@ class Seamail < ApplicationRecord
     to_users ||= []
     to_users = to_users.map(&:downcase).uniq
     to_users << author unless to_users.include? author
-    seamail = Seamail.new(usernames: to_users, subject: subject, last_update: right_now)
-    seamail.messages << SeamailMessage.new(author: author, text: first_message_text, timestamp: right_now, read_users: [author], original_author: original_author)
+
+    seamail = Seamail.new(subject: subject, last_update: right_now)
+    seamail.messages << SeamailMessage.new(author: User.get(author).id, text: first_message_text, original_author: User.get(original_author).id)
+
+    recipients = User.where(username: to_users)
+    recipients.each do |recipient|
+      user_seamail = UserSeamail.new(user_id: recipient.id)
+      user_seamail.last_viewed = right_now if recipient.username == author
+      seamail.user_seamails << user_seamail
+    end
+
     seamail.save if seamail.valid?
     seamail
   end
@@ -73,8 +81,10 @@ class Seamail < ApplicationRecord
   def add_message(author, text, original_author)
     right_now = Time.now
     self.last_update = right_now
+    author_id = User.get(author).id
+    messages << SeamailMessage.new(author: author_id, text: text, original_author: User.get(original_author).id)
+    user_seamails.where(user_id: author_id).update(last_viewed: right_now)
     save
-    messages.create author: author, text: text, timestamp: right_now, read_users: [author], original_author: original_author
   end
 
   def self.search(params = {})
@@ -82,7 +92,7 @@ class Seamail < ApplicationRecord
     current_username = params[:current_username]
     criteria = Seamail.where(usernames: current_username).or({ usernames: /^#{search_text}.*/ },
                                                              '$text' => { '$search' => "\"#{search_text}\"" })
-    limit_criteria(criteria, params).order_by(last_update: :desc)
+    limit_criteria(criteria, params).order(last_update: :desc)
   end
 
 end

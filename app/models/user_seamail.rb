@@ -2,9 +2,10 @@
 #
 # Table name: user_seamails
 #
-#  id         :bigint           not null, primary key
-#  seamail_id :bigint           not null
-#  user_id    :bigint           not null
+#  id          :bigint           not null, primary key
+#  last_viewed :datetime
+#  seamail_id  :bigint           not null
+#  user_id     :bigint           not null
 #
 # Indexes
 #
