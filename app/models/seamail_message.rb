@@ -26,6 +26,7 @@
 
 class SeamailMessage < ApplicationRecord
   belongs_to :seamail, inverse_of: :messages, dependent: :destroy
+  belongs_to :user, class_name: 'User', foreign_key: :author, inverse_of: :seamail_messages
 
   validates :text, presence: true, length: { maximum: 10000 }
   validates :author, :original_author, presence: true
