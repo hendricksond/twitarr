@@ -387,6 +387,7 @@ class User < ApplicationRecord
   end
 
   def self.auto_complete(query)
-    User.or(username: /^#{query}/, display_name: /^#{query}/i).limit(AUTO_COMPLETE_LIMIT)
+    query += '%'
+    User.where('username like ? or display_name like ?', query, query).limit(AUTO_COMPLETE_LIMIT)
   end
 end
